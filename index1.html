@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Birthday Wishes Pro+</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #007bff;
+  --accent: #ff69b4;
+  --bg: #f4f7fa;
+  --text: #333;
+}
+[data-theme="dark"] {
+  --primary: #66aaff;
+  --accent: #ffb6c1;
+  --bg: #1e1e1e;
+  --text: #f4f4f4;
+}
+* {box-sizing: border-box;}
+body {
+  margin:0; font-family:'Roboto',sans-serif;
+  background:var(--bg); color:var(--text);
+  transition:background 0.3s,color 0.3s;
+}
+header {
+  background:var(--primary); color:#fff;
+  position:sticky;top:0;z-index:100;
+}
+nav {
+  max-width:1200px; margin:auto; display:flex;
+  justify-content:space-between; align-items:center;
+  padding:0.5rem 1rem;
+}
+nav h1 {margin:0;font-size:1.5rem;}
+nav ul {list-style:none;display:flex;margin:0;padding:0;}
+nav li {margin:0 10px;}
+nav a {color:#fff;text-decoration:none;}
+.toggle-theme {
+  background:none;border:none;color:white;cursor:pointer;font-size:1.2rem;
+}
+.hero {
+  background:linear-gradient(to right, var(--primary), #004aad);
+  color:white;text-align:center;padding:4rem 1rem;position:relative;overflow:hidden;
+}
+.hero img {
+  width:100%;max-height:350px;object-fit:cover;position:absolute;top:0;left:0;
+  z-index:-1;opacity:0.3;
+}
+.hero h2 {font-size:2.5rem;margin:1rem 0;}
+.hero p {font-size:1.2rem;}
+.container {
+  max-width:1200px;margin:auto;padding:2rem 1rem;
+}
+.tabs {display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;}
+.tab {
+  padding:0.5rem 1rem;border:1px solid var(--primary);border-radius:20px;
+  cursor:pointer;transition:all 0.2s;
+}
+.tab.active {background:var(--primary);color:white;}
+.gallery {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;
+}
+.template-card {
+  background:white;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  cursor:pointer;transition:transform 0.3s;
+}
+.template-card:hover {transform:scale(1.03);}
+.template-card img {width:100%;height:180px;object-fit:cover;}
+.template-card .content {padding:1rem;}
+.favorite {position:absolute;top:10px;right:15px;font-size:1.4rem;color:#ddd;cursor:pointer;}
+.favorite.faved {color:var(--accent);}
+#output {
+  background:var(--accent);color:white;padding:1rem;border-radius:8px;
+  font-size:1.1rem;display:none;margin-top:1rem;white-space:pre-wrap;
+}
+.spinner {display:none;border:4px solid #eee;border-top:4px solid var(--primary);
+  border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:auto;
+}
+@keyframes spin {100%{transform:rotate(360deg);}}
+.confetti {
+  position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;
+}
+.confetti-piece {
+  width:8px;height:8px;position:absolute;background:var(--accent);
+  animation:fall 3s linear forwards;
+}
+@keyframes fall {
+  to {transform:translateY(100vh) rotate(720deg);opacity:0;}
+}
+footer {background:#333;color:#fff;text-align:center;padding:1rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <h1>Birthday Wishes Pro+</h1>
+    <ul>
+      <li><a href="#gallery">Templates</a></li>
+      <li><a href="#form">Customize</a></li>
+      <li><a href="#favorites">❤️ <span id="favCount">0</span></a></li>
+    </ul>
+    <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
+  </nav>
+</header>
+
+<section class="hero">
+  <img id="heroImg" src="https://images.pexels.com/photos/207983/pexels-photo-207983.jpeg" alt="">
+  <h2>Make Every Birthday Extra Special</h2>
+  <p>Pick, customize, and share beautiful wishes instantly.</p>
+</section>
+
+<div class="container">
+  <div class="tabs" id="tabs"></div>
+  <input type="text" id="search" placeholder="Search templates..." style="padding:10px;width:100%;margin-bottom:1rem;">
+  <div class="gallery" id="gallery"></div>
+</div>
+
+<div class="container" id="form">
+  <h2>Customize Your Wish</h2>
+  <input type="text" id="name" placeholder="Name" style="padding:10px;width:100%;margin-bottom:1rem;">
+  <select id="language" style="padding:10px;width:100%;margin-bottom:1rem;">
+    <option value="english">English</option>
+    <option value="urdu">Urdu</option>
+  </select>
+  <input type="text" id="emoji" placeholder="Add Emojis 🎂🥳" style="padding:10px;width:100%;margin-bottom:1rem;">
+  <div class="spinner" id="spinner"></div>
+  <button onclick="generateWish()" style="padding:10px 20px;background:var(--primary);color:white;border:none;border-radius:5px;">Generate</button>
+  <div id="output"></div>
+</div>
+
+<div id="favorites" class="container">
+  <h2>Your Favorites</h2>
+  <div class="gallery" id="favGallery"></div>
+</div>
+
+<div class="confetti" id="confetti"></div>
+
+<footer><p>&copy; 2025 Birthday Wishes Pro+. All rights reserved.</p></footer>
+
+<script>
+const themes = ['Funny','Romantic','Sentimental','Kids','Professional','Adventure','Motivational','Friendship','Family'];
+const gallery = document.getElementById('gallery');
+const favGallery = document.getElementById('favGallery');
+let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+document.getElementById('favCount').textContent = favorites.length;
+let selectedTemplate = null; // added
+
+// Templates
+const allTemplates = themes.flatMap((t, i) =>
+  Array.from({ length: 5 }, (_, j) => {
+    const englishByTheme = {
+      Funny: `Happy Birthday [Name]! May your laughter today be louder than your phone's ringtone.`,
+      Romantic: `Happy Birthday [Name]! You’re the reason love feels so effortless.`,
+      Sentimental: `Happy Birthday [Name]! Your kindness makes the world softer and brighter.`,
+      Kids: `Happy Birthday [Name]! May your day be full of cake, games, and giggles.`,
+      Professional: `Happy Birthday [Name]! Wishing you continued success and calm coffee breaks.`,
+      Adventure: `Happy Birthday [Name]! Life’s an open road—keep exploring every turn.`,
+      Motivational: `Happy Birthday [Name]! Another year, another reason to chase your dreams.`,
+      Friendship: `Happy Birthday [Name]! You make every memory shine brighter.`,
+      Family: `Happy Birthday [Name]! You’re the heart that keeps us together.`,
+    };
+
+    const urduPoems = {
+      Friendship: [
+        "[Name] دوست وہ جو دکھ میں ساتھ دے، جنم دن پر خوشیاں بانٹ دے۔",
+        "جنم دن مبارک [Name]! تیری دوستی میری زندگی کی روشنی ہے۔",
+        "اے [Name]، تیری دوستی دل کا سکون ہے، آج تیرا دن خوشیوں سے جڑ جائے۔",
+        "[Name] تیری مسکراہٹ میں دوستی کی خوشبو ہے، جنم دن پر وہ اور مہک جائے۔",
+        "[Name]، دوست وہ خزانہ ہے جو وقت کے ساتھ قیمتی ہوتا جائے۔ جنم دن مبارک!"
+      ],
+      Default: [
+        "جنم دن مبارک [Name]! خوشیوں کی بارش تیرے آنگن میں ہو۔",
+        "[Name] تیرے دن کی روشنی تجھ پہ نچھاور ہو۔",
+        "اے [Name]، تیرے لبوں پہ ہمیشہ مسکراہٹ رہے۔",
+        "[Name]، تیرے خواب سچ ہوں، تیرے دل میں خوشیاں ہوں۔"
+      ]
+    };
+
+    return {
+      id: i * 10 + j,
+      title: `${t} ${j + 1}`,
+      desc: `${t} style wish ${j + 1}`,
+      category: t,
+      img: `https://picsum.photos/seed/${t}-${j}/400/250`,
+      english: englishByTheme[t],
+      urdu: (urduPoems[t] || urduPoems.Default)[j % (urduPoems[t] ? urduPoems[t].length : urduPoems.Default.length)],
+    };
+  })
+);
+
+// Tabs
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  ['All', ...themes].forEach(t => {
+    const div = document.createElement('div');
+    div.textContent = t;
+    div.className = 'tab';
+    if (t === 'All') div.classList.add('active');
+    div.onclick = () => {
+      document.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
+      div.classList.add('active');
+      renderGallery(t);
+    };
+    tabs.appendChild(div);
+  });
+}
+
+// Gallery
+function renderGallery(filter = 'All') {
+  gallery.innerHTML = '';
+  const term = document.getElementById('search').value.toLowerCase();
+  const filtered = allTemplates.filter(x =>
+    (filter === 'All' || x.category === filter) &&
+    (x.title.toLowerCase().includes(term) || x.desc.toLowerCase().includes(term))
+  );
+  filtered.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'template-card';
+    card.innerHTML = `
+      <div class="favorite ${favorites.some(f => f.id === t.id) ? 'faved' : ''}" onclick="toggleFavorite(${t.id},event)">&#10084;</div>
+      <img src="${t.img}" alt="">
+      <div class="content"><h3>${t.title}</h3><p>${t.desc}</p></div>
+    `;
+    card.onclick = () => {
+      document.querySelectorAll('.template-card').forEach(c => c.style.border = 'none');
+      card.style.border = '3px solid var(--accent)';
+      selectedTemplate = t;
+    };
+    gallery.appendChild(card);
+  });
+}
+
+// Favorites
+function toggleFavorite(id, e) {
+  e.stopPropagation();
+  const item = allTemplates.find(x => x.id === id);
+  const index = favorites.findIndex(x => x.id === id);
+  if (index > -1) favorites.splice(index, 1); else favorites.push(item);
+  localStorage.setItem('favorites', JSON.stringify(favorites));
+  document.getElementById('favCount').textContent = favorites.length;
+  renderGallery(document.querySelector('.tab.active').textContent);
+  renderFavorites();
+}
+function renderFavorites() {
+  favGallery.innerHTML = '';
+  favorites.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'template-card';
+    card.innerHTML = `<div class="favorite faved" onclick="toggleFavorite(${t.id},event)">&#10084;</div>
+    <img src="${t.img}" alt=""><div class="content"><h3>${t.title}</h3><p>${t.desc}</p></div>`;
+    favGallery.appendChild(card);
+  });
+}
+
+// Generate
+function generateWish() {
+  const name = document.getElementById('name').value || 'Friend';
+  const lang = document.getElementById('language').value;
+  const emoji = document.getElementById('emoji').value;
+  const spinner = document.getElementById('spinner');
+  const out = document.getElementById('output');
+
+  spinner.style.display = 'block';
+  out.style.display = 'none';
+
+  setTimeout(() => {
+    spinner.style.display = 'none';
+    if (!selectedTemplate) {
+      alert("Please select a template first!");
+      return;
+    }
+    const t = selectedTemplate;
+    const text = t[lang].replace('[Name]', name) + ' ' + emoji;
+    out.textContent = text;
+    out.style.display = 'block';
+    confettiBurst();
+  }, 800);
+}
+
+// Confetti + Theme + Hero
+function confettiBurst() {
+  const c = document.getElementById('confetti');
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = `hsl(${Math.random() * 360},100%,70%)`;
+    piece.style.animationDuration = 2 + Math.random() * 3 + 's';
+    c.appendChild(piece);
+    setTimeout(() => piece.remove(), 3000);
+  }
+}
+function toggleTheme() {
+  const mode = document.body.getAttribute('data-theme');
+  document.body.setAttribute('data-theme', mode === 'dark' ? 'light' : 'dark');
+}
+function heroSlideshow() {
+  const imgs = [
+    'https://images.pexels.com/photos/207983/pexels-photo-207983.jpeg',
+    'https://images.pexels.com/photos/36029/pexels-photo.jpg',
+    'https://images.pexels.com/photos/1693626/pexels-photo-1693626.jpeg'
+  ];
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % imgs.length;
+    document.getElementById('heroImg').src = imgs[i];
+  }, 4000);
+}
+
+document.getElementById('search').oninput = () =>
+  renderGallery(document.querySelector('.tab.active').textContent);
+renderTabs();
+renderGallery();
+renderFavorites();
+heroSlideshow();
+</script>
+</body>
+</html>
